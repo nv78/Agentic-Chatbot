@@ -5,10 +5,19 @@ services:
       dockerfile: Dockerfile
     container_name: anote-backend
     restart: unless-stopped
+    develop:
+      watch:
+        - path: .
+          target: /app
+          action: sync
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - .git/
+            - database/schema.sql
     ports:
       - "5000:5000" # Map container's 5000 to host's 8000
     volumes:
-      - ./:/app
       - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
     env_file:
       - .env
@@ -18,8 +27,7 @@ services:
     networks:
       - anote-network
     command: >
-      python -m flask run --host=0.0.0.0 --port=5000
-
+      python -m flask run --host=0.0.0.0 --port=5000 --reload
   db:
     image: mysql:8.0
     container_name: anote-db
