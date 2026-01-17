@@ -6,6 +6,20 @@
 const API_BASE_URL = "http://localhost:5000/api";
 export const API_SERVER_URL = "http://localhost:5000";
 
+import {
+  GetChatResponse,
+  GetUserChatsResponse,
+  CreateChatResponse,
+  AddMessageResponse,
+  DeleteChatResponse,
+  UpdateChatResponse,
+  ShareLinkStatus,
+  CreateShareLinkResponse,
+  DeleteShareLinkResponse,
+  UpdateShareLinkResponse,
+  SharedChatResponse,
+} from "../types/chat";
+
 /**
  * Custom error class for API errors
  */
@@ -125,7 +139,7 @@ export const chatAPI = {
   /**
    * Create a new chat
    * @param {string} name - Optional chat name
-   * @returns {Promise<{chat_uuid: string, name: string, message: string}>}
+   * @returns {Promise<CreateChatResponse>}
    */
   createChat: (name = "New Chat") =>
     apiRequest("/chats", {
@@ -135,14 +149,14 @@ export const chatAPI = {
 
   /**
    * Get all user chats
-   * @returns {Promise<{chats: Array}>}
+   * @returns {Promise<GetUserChatsResponse>}
    */
   getUserChats: () => apiRequest("/chats"),
 
   /**
    * Get a specific chat with messages
    * @param {string} chatUuid
-   * @returns {Promise<{chat: object, messages: Array}>}
+   * @returns {Promise<GetChatResponse>}
    */
   getChat: (chatUuid) => apiRequest(`/chats/${chatUuid}`),
 
@@ -151,7 +165,7 @@ export const chatAPI = {
    * @param {string} chatUuid
    * @param {string} content
    * @param {"user" | "assistant"} role - 'user' or 'assistant'
-   * @returns {Promise<{message_uuid: string, content: string, role: string}>}
+   * @returns {Promise<AddMessageResponse>}
    */
   addMessage: (chatUuid, content, role = "user") =>
     apiRequest(`/chats/${chatUuid}/messages`, {
@@ -162,7 +176,7 @@ export const chatAPI = {
   /**
    * Delete a chat
    * @param {string} chatUuid
-   * @returns {Promise<{message: string}>}
+   * @returns {Promise<DeleteChatResponse>}
    */
   deleteChat: (chatUuid) =>
     apiRequest(`/chats/${chatUuid}`, {
@@ -173,7 +187,7 @@ export const chatAPI = {
    * Update chat name
    * @param {string} chatUuid
    * @param {string} name
-   * @returns {Promise<{message: string, name: string}>}
+   * @returns {Promise<UpdateChatResponse>}
    */
   updateChat: (chatUuid, name) =>
     apiRequest(`/chats/${chatUuid}`, {
@@ -184,14 +198,14 @@ export const chatAPI = {
   /**
    * Get the current share link status for a chat
    * @param {string} chatUuid
-   * @returns {Promise<{share_uuid: string | null, is_active: boolean, created_at?: string, view_count?: number}>}
+   * @returns {Promise<ShareLinkStatus>}
    */
   getShareLink: (chatUuid) => apiRequest(`/chats/${chatUuid}/share`),
 
   /**
    * Create a shareable link for a chat
    * @param {string} chatUuid
-   * @returns {Promise<{share_uuid: string, message: string}>}
+   * @returns {Promise<CreateShareLinkResponse>}
    */
   createShareLink: (chatUuid) =>
     apiRequest(`/chats/${chatUuid}/share`, {
@@ -201,7 +215,7 @@ export const chatAPI = {
   /**
    * Delete/deactivate a shareable link for a chat
    * @param {string} chatUuid
-   * @returns {Promise<{message: string}>}
+   * @returns {Promise<DeleteShareLinkResponse>}
    */
   deleteShareLink: (chatUuid) =>
     apiRequest(`/chats/${chatUuid}/share`, {
@@ -212,7 +226,7 @@ export const chatAPI = {
    * Update/reactivate or regenerate a shareable link for a chat
    * @param {string} chatUuid
    * @param {boolean} regenerate - If true, generates a new UUID for the share link
-   * @returns {Promise<{share_uuid: string, is_active: boolean, message: string}>}
+   * @returns {Promise<UpdateShareLinkResponse>}
    */
   updateShareLink: async (chatUuid, regenerate = false) =>
     await apiRequest(`/chats/${chatUuid}/share`, {
@@ -223,7 +237,7 @@ export const chatAPI = {
   /**
    * Get a shared chat by share UUID (public endpoint)
    * @param {string} shareUuid
-   * @returns {Promise<{chat: object, messages: Array, is_shared: boolean}>}
+   * @returns {Promise<SharedChatResponse>}
    */
   getSharedChat: (shareUuid) => apiRequest(`/shared/${shareUuid}`),
 };
@@ -243,7 +257,7 @@ export const fileAPI = {
 
     return apiRequest("/files/upload", {
       method: "POST",
-      headers: {}, // Let browser set Content-Type for multipart/form-data
+      headers: { "Content-Type": "multipart/form-data" },
       body: formData,
     });
   },
