@@ -370,11 +370,7 @@ def update_share_link(chat_uuid):
     user_id = session.get('user_id')
     data = request.get_json() or {}
     regenerate = data.get('regenerate', False)
-    active = data.get("is_active")
-    print("here", flush=True)
-
-    if active is None:
-        return jsonify({ "error": "missing property active"})
+    
     try:
         # Verify chat belongs to user and check for existing share link
         query = '''
@@ -441,10 +437,10 @@ def update_share_link(chat_uuid):
         
         update_query = '''
             UPDATE shared_chats 
-            SET is_active = %s 
+            SET is_active = TRUE 
             WHERE chat_uuid = %s AND user_id = %s
         '''
-        Database.execute_query(update_query, ("TRUE" if active else "FALSE", chat_uuid, user_id), commit=True)
+        Database.execute_query(update_query, (chat_uuid, user_id), commit=True)
         
         # Fetch the updated record from database
         fetch_query = '''

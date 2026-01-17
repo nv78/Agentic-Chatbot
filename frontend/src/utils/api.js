@@ -211,14 +211,13 @@ export const chatAPI = {
   /**
    * Update/reactivate or regenerate a shareable link for a chat
    * @param {string} chatUuid
-   * @param {boolean} active - If true, active link else disable link
    * @param {boolean} regenerate - If true, generates a new UUID for the share link
    * @returns {Promise<{share_uuid: string, is_active: boolean, message: string}>}
    */
-  updateShareLink: async (chatUuid, active, regenerate = false) =>
+  updateShareLink: async (chatUuid, regenerate = false) =>
     await apiRequest(`/chats/${chatUuid}/share`, {
       method: "PUT",
-      body: JSON.stringify({ regenerate, active }),
+      body: JSON.stringify({ regenerate }),
     }),
 
   /**

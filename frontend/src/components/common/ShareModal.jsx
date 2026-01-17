@@ -70,8 +70,7 @@ const ShareModal = ({ isOpen, onClose, chatUuid, chatName, theme }) => {
 
   const handleConfirm = async () => {
     // Changes are already saved to backend when toggle is clicked
-    console.log("here???")
-    await chatAPI.updateShareLink(chatUuid, !shareData.is_active)
+    shareData.is_active ? await chatAPI.updateShareLink(chatUuid) : await chatAPI.deleteShareLink(chatUuid)
     onClose()
   };
 
