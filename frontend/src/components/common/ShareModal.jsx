@@ -33,7 +33,7 @@ const ShareModal = ({ isOpen, onClose, chatUuid, chatName, theme }) => {
     try {
       setIsToggling(true);
       setError(null);
-      const data = await chatAPI.createShareLink(chatUuid);
+      const data = await chatAPI.createShareLink(chatUuid, true);
       setShareData({
         share_uuid: data.share_uuid,
         is_active: true,

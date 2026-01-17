@@ -78,11 +78,6 @@ export type ShareLinkStatus = {
   view_count?: number;
 };
 
-/** Create share link response */
-export type CreateShareLinkResponse = {
-  share_uuid: string;
-  message: string;
-};
 
 /** Delete share link response */
 export type DeleteShareLinkResponse = {
@@ -90,7 +85,7 @@ export type DeleteShareLinkResponse = {
 };
 
 /** Update share link response */
-export type UpdateShareLinkResponse = {
+export type CreateShareLinkResponse = {
   share_uuid: string;
   is_active: boolean;
   message: string;

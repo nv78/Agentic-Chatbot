@@ -14,12 +14,8 @@ function AppContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { theme } = useTheme();
-  const {
-    user,
-    isAuthenticated,
-    logout,
-    openAuthModal,
-  } = useAuth();
+  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
+
 
   const handleLogout = async () => {
     await logout();

@@ -194,9 +194,10 @@ export const chatAPI = {
    * @param {string} chatUuid
    * @returns {Promise<import("../types/chat").CreateShareLinkResponse>}
    */
-  createShareLink: (chatUuid) =>
+  createShareLink: (chatUuid, regenerate = false) =>
     apiRequest(`/chats/${chatUuid}/share`, {
       method: "POST",
+      body: JSON.stringify({ regenerate }),
     }),
 
   /**
@@ -207,18 +208,6 @@ export const chatAPI = {
   deleteShareLink: (chatUuid) =>
     apiRequest(`/chats/${chatUuid}/share`, {
       method: "DELETE",
-    }),
-
-  /**
-   * Update/reactivate or regenerate a shareable link for a chat
-   * @param {string} chatUuid
-   * @param {boolean} regenerate - If true, generates a new UUID for the share link
-   * @returns {Promise<import("../types/chat").UpdateShareLinkResponse>}
-   */
-  updateShareLink: async (chatUuid, regenerate = false) =>
-    await apiRequest(`/chats/${chatUuid}/share`, {
-      method: "PUT",
-      body: JSON.stringify({ regenerate }),
     }),
 
   /**
