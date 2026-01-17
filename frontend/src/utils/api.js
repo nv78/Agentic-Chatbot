@@ -2,23 +2,10 @@
  * Centralized API utility for making HTTP requests
  * Handles credentials, base URL, and consistent error handling
  */
+/// <reference path="../types/chat.d.ts" />
 
 const API_BASE_URL = "http://localhost:5000/api";
 export const API_SERVER_URL = "http://localhost:5000";
-
-import {
-  GetChatResponse,
-  GetUserChatsResponse,
-  CreateChatResponse,
-  AddMessageResponse,
-  DeleteChatResponse,
-  UpdateChatResponse,
-  ShareLinkStatus,
-  CreateShareLinkResponse,
-  DeleteShareLinkResponse,
-  UpdateShareLinkResponse,
-  SharedChatResponse,
-} from "../types/chat";
 
 /**
  * Custom error class for API errors
@@ -139,7 +126,7 @@ export const chatAPI = {
   /**
    * Create a new chat
    * @param {string} name - Optional chat name
-   * @returns {Promise<CreateChatResponse>}
+   * @returns {Promise<import("../types/chat").CreateChatResponse>}
    */
   createChat: (name = "New Chat") =>
     apiRequest("/chats", {
@@ -149,14 +136,14 @@ export const chatAPI = {
 
   /**
    * Get all user chats
-   * @returns {Promise<GetUserChatsResponse>}
+   * @returns {Promise<import("../types/chat").GetUserChatsResponse>}
    */
   getUserChats: () => apiRequest("/chats"),
 
   /**
    * Get a specific chat with messages
    * @param {string} chatUuid
-   * @returns {Promise<GetChatResponse>}
+   * @returns {Promise<import("../types/chat").GetChatResponse>}
    */
   getChat: (chatUuid) => apiRequest(`/chats/${chatUuid}`),
 
@@ -165,7 +152,7 @@ export const chatAPI = {
    * @param {string} chatUuid
    * @param {string} content
    * @param {"user" | "assistant"} role - 'user' or 'assistant'
-   * @returns {Promise<AddMessageResponse>}
+   * @returns {Promise<import("../types/chat").AddMessageResponse>}
    */
   addMessage: (chatUuid, content, role = "user") =>
     apiRequest(`/chats/${chatUuid}/messages`, {
@@ -176,7 +163,7 @@ export const chatAPI = {
   /**
    * Delete a chat
    * @param {string} chatUuid
-   * @returns {Promise<DeleteChatResponse>}
+   * @returns {Promise<import("../types/chat").DeleteChatResponse>}
    */
   deleteChat: (chatUuid) =>
     apiRequest(`/chats/${chatUuid}`, {
@@ -187,7 +174,7 @@ export const chatAPI = {
    * Update chat name
    * @param {string} chatUuid
    * @param {string} name
-   * @returns {Promise<UpdateChatResponse>}
+   * @returns {Promise<import("../types/chat").UpdateChatResponse>}
    */
   updateChat: (chatUuid, name) =>
     apiRequest(`/chats/${chatUuid}`, {
@@ -198,14 +185,14 @@ export const chatAPI = {
   /**
    * Get the current share link status for a chat
    * @param {string} chatUuid
-   * @returns {Promise<ShareLinkStatus>}
+   * @returns {Promise<import("../types/chat").ShareLinkStatus>}
    */
   getShareLink: (chatUuid) => apiRequest(`/chats/${chatUuid}/share`),
 
   /**
    * Create a shareable link for a chat
    * @param {string} chatUuid
-   * @returns {Promise<CreateShareLinkResponse>}
+   * @returns {Promise<import("../types/chat").CreateShareLinkResponse>}
    */
   createShareLink: (chatUuid) =>
     apiRequest(`/chats/${chatUuid}/share`, {
@@ -215,7 +202,7 @@ export const chatAPI = {
   /**
    * Delete/deactivate a shareable link for a chat
    * @param {string} chatUuid
-   * @returns {Promise<DeleteShareLinkResponse>}
+   * @returns {Promise<import("../types/chat").DeleteShareLinkResponse>}
    */
   deleteShareLink: (chatUuid) =>
     apiRequest(`/chats/${chatUuid}/share`, {
@@ -226,7 +213,7 @@ export const chatAPI = {
    * Update/reactivate or regenerate a shareable link for a chat
    * @param {string} chatUuid
    * @param {boolean} regenerate - If true, generates a new UUID for the share link
-   * @returns {Promise<UpdateShareLinkResponse>}
+   * @returns {Promise<import("../types/chat").UpdateShareLinkResponse>}
    */
   updateShareLink: async (chatUuid, regenerate = false) =>
     await apiRequest(`/chats/${chatUuid}/share`, {
@@ -237,7 +224,7 @@ export const chatAPI = {
   /**
    * Get a shared chat by share UUID (public endpoint)
    * @param {string} shareUuid
-   * @returns {Promise<SharedChatResponse>}
+   * @returns {Promise<import("../types/chat").SharedChatResponse>}
    */
   getSharedChat: (shareUuid) => apiRequest(`/shared/${shareUuid}`),
 };
