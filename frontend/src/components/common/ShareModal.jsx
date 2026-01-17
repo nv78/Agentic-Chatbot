@@ -63,16 +63,6 @@ const ShareModal = ({ isOpen, onClose, chatUuid, chatName, theme }) => {
     }
   };
 
-  const handleCancel = () => {
-    setCopied(false);
-    onClose();
-  };
-
-  const handleConfirm = async () => {
-    // Changes are already saved to backend when toggle is clicked
-    shareData.is_active ? await chatAPI.updateShareLink(chatUuid) : await chatAPI.deleteShareLink(chatUuid)
-    onClose()
-  };
 
   const handleCopyLink = async () => {
     if (!shareData?.share_uuid) return;
@@ -259,29 +249,6 @@ const ShareModal = ({ isOpen, onClose, chatUuid, chatName, theme }) => {
           </div>
         )}
 
-        {/* Action buttons at bottom */}
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            onClick={handleCancel}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
-              theme === "dark"
-                ? "bg-gray-700 hover:bg-gray-600 text-white"
-                : "bg-gray-200 hover:bg-gray-300 text-gray-900"
-            }`}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleConfirm}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
-              theme === "dark"
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-blue-500 hover:bg-blue-600 text-white"
-            }`}
-          >
-            Confirm
-          </button>
-        </div>
       </div>
     </div>
   );

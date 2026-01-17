@@ -83,6 +83,7 @@ const ChatInterface = ({ isSidebarOpen, isAuthenticated }) => {
       setIsLoadingMessages(false);
     }
   };
+
   const loadChatMessages = async (chatIdToLoad) => {
     if (!chatIdToLoad) return;
 
