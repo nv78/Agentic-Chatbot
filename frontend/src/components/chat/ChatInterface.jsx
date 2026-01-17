@@ -38,6 +38,7 @@ const ChatInterface = ({ isSidebarOpen, isAuthenticated }) => {
 
     try {
       const response = await chatAPI.getSharedChat(shareIdToLoad);
+
       const loadedMessages = response.messages.map((msg) => ({
         id: msg.id,
         text: msg.content,
@@ -56,9 +57,28 @@ const ChatInterface = ({ isSidebarOpen, isAuthenticated }) => {
       setMessages(loadedMessages);
       loadedChatIdRef.current = shareIdToLoad;
     } catch (error) {
-      setIsLoadingMessages(false);
-      console.error("Error loading shared chat:", error);
-      setLoadError(error.message || "Failed to load shared chat");
+      // If chat not found (404) or unauthorized, redirect to home only if not already there
+      if (
+        (error.status === 404 ||
+          error.status === 401 ||
+          error.status === 403) &&
+        shareIdToLoad
+      ) {
+        // Reset state before redirecting
+        setMessages([]);
+        setCurrentChatId(null);
+        loadedChatIdRef.current = null;
+
+        setLoadError(
+          error.status === 404
+            ? "Shared chat not found. It may have been deleted or you do not have access."
+            : error.status === 401 || error.status === 403
+              ? "You are not authorized to view this shared chat."
+              : error.message || "Failed to load shared chat.",
+        );
+      } else {
+        setLoadError(error.message);
+      }
     } finally {
       setIsLoadingMessages(false);
     }

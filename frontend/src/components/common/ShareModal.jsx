@@ -90,7 +90,7 @@ const ShareModal = ({ isOpen, onClose, chatUuid, chatName, theme }) => {
   if (!isOpen) return null;
 
   const shareUrl = shareData?.share_uuid
-    ? `${window.location.origin}/shared/${shareData.share_uuid}`
+    ? `${window.location.origin}/shares/${shareData.share_uuid}`
     : "";
 
   return (
