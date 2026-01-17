@@ -222,6 +222,43 @@ def update_chat(chat_uuid):
         return jsonify({'error': 'Failed to update chat'}), 500
 
 
+@chat_bp.route('/chats/<chat_uuid>/share', methods=['GET'])
+@auth_required
+def get_share_link(chat_uuid):
+    """Get the current share link status for a chat"""
+    user_id = session.get('user_id')
+    
+    try:
+        # Verify chat belongs to user and get share link if exists
+        query = '''
+            SELECT c.chat_uuid, s.share_uuid, s.is_active, s.created_at, s.view_count
+            FROM chats c
+            LEFT JOIN shared_chats s ON c.chat_uuid = s.chat_uuid AND s.user_id = %s
+            WHERE c.chat_uuid = %s AND c.user_id = %s AND c.is_archived = FALSE
+        '''
+        result = Database.execute_query(query, (user_id, chat_uuid, user_id), fetch_one=True)
+        
+        if not result:
+            return jsonify({'error': 'Chat not found'}), 404
+        # Check if share link exists and is active (explicit check for True)
+        if result['share_uuid'] is not None and result['is_active'] == 1:
+            return jsonify({
+                'share_uuid': result['share_uuid'],
+                'is_active': result['is_active'],
+                'created_at': result['created_at'],
+                'view_count': result['view_count'] or 0
+            }), 200
+        else:
+            return jsonify({
+                'share_uuid': None,
+                'is_active': False
+            }), 200
+    except Exception as e:
+        import logging
+        logging.error(f"Error fetching share link for chat {chat_uuid}: {e}")
+        return jsonify({'error': 'Failed to fetch share link'}), 500
+
+
 @chat_bp.route('/chats/<chat_uuid>/share', methods=['POST'])
 @auth_required
 def create_share_link(chat_uuid):
@@ -229,24 +266,43 @@ def create_share_link(chat_uuid):
     user_id = session.get('user_id')
     
     try:
-        # Verify chat belongs to user
-        chat_query = 'SELECT chat_uuid FROM chats WHERE chat_uuid = %s AND user_id = %s AND is_archived = FALSE'
-        chat = Database.execute_query(chat_query, (chat_uuid, user_id), fetch_one=True)
+        # Verify chat belongs to user and check for existing share link in one query
+        query = '''
+            SELECT c.chat_uuid, s.share_uuid, s.is_active
+            FROM chats c
+            LEFT JOIN shared_chats s ON c.chat_uuid = s.chat_uuid AND s.user_id = %s
+            WHERE c.chat_uuid = %s AND c.user_id = %s AND c.is_archived = FALSE
+        '''
+        result = Database.execute_query(query, (user_id, chat_uuid, user_id), fetch_one=True)
         
-        if not chat:
+        if not result:
             return jsonify({'error': 'Chat not found'}), 404
         
-        # Check if share link already exists and is active
-        existing_share_query = '''
-            SELECT share_uuid FROM shared_chats 
-            WHERE chat_uuid = %s AND user_id = %s AND is_active = TRUE
-        '''
-        existing_share = Database.execute_query(existing_share_query, (chat_uuid, user_id), fetch_one=True)
-        
-        if existing_share:
+        # If share link already exists, check if it needs to be reactivated
+        if result['share_uuid']:
+            # If inactive, reactivate it
+            if not result['is_active']:
+                update_query = '''
+                    UPDATE shared_chats 
+                    SET is_active = TRUE 
+                    WHERE chat_uuid = %s AND user_id = %s
+                '''
+                Database.execute_query(update_query, (chat_uuid, user_id), commit=True)
+            
+            # Fetch current state from database
+            fetch_query = '''
+                SELECT share_uuid, is_active, created_at, view_count
+                FROM shared_chats
+                WHERE chat_uuid = %s AND user_id = %s
+            '''
+            current = Database.execute_query(fetch_query, (chat_uuid, user_id), fetch_one=True)
+            
             return jsonify({
-                'share_uuid': existing_share['share_uuid'],
-                'message': 'Share link already exists'
+                'share_uuid': current['share_uuid'],
+                'is_active': current['is_active'],
+                'created_at': current['created_at'],
+                'view_count': current['view_count'],
+                'message': 'Share link reactivated successfully' if not result['is_active'] else 'Share link already active'
             }), 200
         
         # Create new share link
@@ -257,8 +313,19 @@ def create_share_link(chat_uuid):
         '''
         Database.execute_query(insert_query, (share_uuid, chat_uuid, user_id), commit=True)
         
+        # Fetch the created record from database
+        fetch_query = '''
+            SELECT share_uuid, is_active, created_at, view_count
+            FROM shared_chats
+            WHERE chat_uuid = %s AND user_id = %s
+        '''
+        created = Database.execute_query(fetch_query, (chat_uuid, user_id), fetch_one=True)
+        
         return jsonify({
-            'share_uuid': share_uuid,
+            'share_uuid': created['share_uuid'],
+            'is_active': created['is_active'],
+            'created_at': created['created_at'],
+            'view_count': created['view_count'],
             'message': 'Share link created successfully'
         }), 201
     except Exception as e:
@@ -294,6 +361,110 @@ def delete_share_link(chat_uuid):
         import logging
         logging.error(f"Error deleting share link for chat {chat_uuid}: {e}")
         return jsonify({'error': 'Failed to deactivate share link'}), 500
+
+
+@chat_bp.route('/chats/<chat_uuid>/share', methods=['PUT'])
+@auth_required
+def update_share_link(chat_uuid):
+    """Update/reactivate or regenerate a shareable link for a chat"""
+    user_id = session.get('user_id')
+    data = request.get_json() or {}
+    regenerate = data.get('regenerate', False)
+    active = data.get("is_active")
+    print("here", flush=True)
+
+    if active is None:
+        return jsonify({ "error": "missing property active"})
+    try:
+        # Verify chat belongs to user and check for existing share link
+        query = '''
+            SELECT c.chat_uuid, s.share_uuid, s.is_active
+            FROM chats c
+            LEFT JOIN shared_chats s ON c.chat_uuid = s.chat_uuid AND s.user_id = %s
+            WHERE c.chat_uuid = %s AND c.user_id = %s AND c.is_archived = FALSE
+        '''
+        result = Database.execute_query(query, (user_id, chat_uuid, user_id), fetch_one=True)
+        
+        if not result:
+            return jsonify({'error': 'Chat not found'}), 404
+
+        # If no existing share link, create one
+        if not result['share_uuid']:
+            share_uuid = str(uuid.uuid4())
+            insert_query = '''
+                INSERT INTO shared_chats (share_uuid, chat_uuid, user_id, is_active) 
+                VALUES (%s, %s, %s, TRUE)
+            '''
+            Database.execute_query(insert_query, (share_uuid, chat_uuid, user_id), commit=True)
+            
+            # Fetch the created record from database
+            fetch_query = '''
+                SELECT share_uuid, is_active, created_at, view_count
+                FROM shared_chats
+                WHERE chat_uuid = %s AND user_id = %s
+            '''
+            created = Database.execute_query(fetch_query, (chat_uuid, user_id), fetch_one=True)
+            
+            return jsonify({
+                'share_uuid': created['share_uuid'],
+                'is_active': created['is_active'],
+                'created_at': created['created_at'],
+                'view_count': created['view_count'],
+                'message': 'Share link created successfully'
+            }), 201
+        
+        # If regenerate flag is true, generate new UUID
+        if regenerate:
+            new_share_uuid = str(uuid.uuid4())
+            update_query = '''
+                UPDATE shared_chats 
+                SET share_uuid = %s, is_active = TRUE, view_count = 0, created_at = CURRENT_TIMESTAMP
+                WHERE chat_uuid = %s AND user_id = %s
+            '''
+            Database.execute_query(update_query, (new_share_uuid, chat_uuid, user_id), commit=True)
+            
+            # Fetch the updated record from database
+            fetch_query = '''
+                SELECT share_uuid, is_active, created_at, view_count
+                FROM shared_chats
+                WHERE chat_uuid = %s AND user_id = %s
+            '''
+            updated = Database.execute_query(fetch_query, (chat_uuid, user_id), fetch_one=True)
+            
+            return jsonify({
+                'share_uuid': updated['share_uuid'],
+                'is_active': updated['is_active'],
+                'created_at': updated['created_at'],
+                'view_count': updated['view_count'],
+                'message': 'Share link regenerated successfully'
+            }), 200
+        
+        update_query = '''
+            UPDATE shared_chats 
+            SET is_active = %s 
+            WHERE chat_uuid = %s AND user_id = %s
+        '''
+        Database.execute_query(update_query, ("TRUE" if active else "FALSE", chat_uuid, user_id), commit=True)
+        
+        # Fetch the updated record from database
+        fetch_query = '''
+            SELECT share_uuid, is_active, created_at, view_count
+            FROM shared_chats
+            WHERE chat_uuid = %s AND user_id = %s
+        '''
+        updated = Database.execute_query(fetch_query, (chat_uuid, user_id), fetch_one=True)
+        return jsonify({
+            'share_uuid': updated['share_uuid'],
+            'is_active': updated['is_active'],
+            'created_at': updated['created_at'],
+            'view_count': updated['view_count'],
+            'message': 'Share link reactivated successfully'
+        }), 200
+        
+    except Exception as e:
+        import logging
+        logging.error(f"Error updating share link for chat {chat_uuid}: {e}")
+        return jsonify({'error': 'Failed to update share link'}), 500
 
 
 @chat_bp.route('/shared/<share_uuid>', methods=['GET'])

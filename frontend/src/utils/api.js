@@ -54,10 +54,9 @@ async function apiRequest(endpoint, options = {}) {
     if (error instanceof APIError) {
       throw error;
     }
-
     // Handle network errors
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
-      throw new APIError("Network error. Please check your connection.");
+    if (error instanceof TypeError && error.message === "Load failed") {
+      throw new APIError("Unable to complete request. Please try again later.");
     }
 
     // Handle other errors
@@ -183,6 +182,13 @@ export const chatAPI = {
     }),
 
   /**
+   * Get the current share link status for a chat
+   * @param {string} chatUuid
+   * @returns {Promise<{share_uuid: string | null, is_active: boolean, created_at?: string, view_count?: number}>}
+   */
+  getShareLink: (chatUuid) => apiRequest(`/chats/${chatUuid}/share`),
+
+  /**
    * Create a shareable link for a chat
    * @param {string} chatUuid
    * @returns {Promise<{share_uuid: string, message: string}>}
@@ -200,6 +206,19 @@ export const chatAPI = {
   deleteShareLink: (chatUuid) =>
     apiRequest(`/chats/${chatUuid}/share`, {
       method: "DELETE",
+    }),
+
+  /**
+   * Update/reactivate or regenerate a shareable link for a chat
+   * @param {string} chatUuid
+   * @param {boolean} active - If true, active link else disable link
+   * @param {boolean} regenerate - If true, generates a new UUID for the share link
+   * @returns {Promise<{share_uuid: string, is_active: boolean, message: string}>}
+   */
+  updateShareLink: async (chatUuid, active, regenerate = false) =>
+    await apiRequest(`/chats/${chatUuid}/share`, {
+      method: "PUT",
+      body: JSON.stringify({ regenerate, active }),
     }),
 
   /**
