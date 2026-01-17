@@ -483,10 +483,10 @@ def get_shared_chat(share_uuid):
         # Increment view count
         update_view_query = '''
             UPDATE shared_chats 
-            SET view_count = view_count + 1 
+            SET view_count = %s
             WHERE share_uuid = %s
         '''
-        Database.execute_query(update_view_query, (share_uuid), commit=True)
+        Database.execute_query(update_view_query, (share['view_count'] + 1, share_uuid), commit=True)
         
         # Get chat details
         chat_query = '''
