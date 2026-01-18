@@ -56,7 +56,7 @@ def login():
     
     user = Database.execute_query(
         'SELECT id, username, password_hash, is_active FROM users WHERE email = %s',
-        (email,), fetch_one=True
+        (email), fetch_one=True
     )
 
     if not user or not check_password_hash(user['password_hash'], password):
